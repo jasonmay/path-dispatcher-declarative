@@ -11,7 +11,7 @@ is_deeply([$complete->complete(Path::Dispatcher::Path->new('cxxx'))], []);
 
 is_deeply([$complete->complete(Path::Dispatcher::Path->new('c'))], ['complete']);
 is_deeply([$complete->complete(Path::Dispatcher::Path->new('compl'))], ['complete']);
-is_deeply([$complete->complete(Path::Dispatcher::Path->new('complete'))], ['complete']);
+is_deeply([$complete->complete(Path::Dispatcher::Path->new('complete'))], []);
 
 do {
     package MyApp::Dispatcher;
