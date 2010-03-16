@@ -1,6 +1,10 @@
 package Path::Dispatcher::Declarative;
 use strict;
 use warnings;
+use 5.008001;
+
+our $VERSION = '0.01';
+
 use Path::Dispatcher;
 use Path::Dispatcher::Declarative::Builder;
 use Sub::Exporter;
@@ -192,6 +196,23 @@ An example:
             print "score:\n";
             ...
         };
+
+=head1 AUTHOR
+
+Shawn M Moore, C<< <sartak at bestpractical.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-path-dispatcher-declarative at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Path-Dispatcher-Declarative>.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2008-2010 Best Practical Solutions.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 
