@@ -9,7 +9,5 @@ requires 'Path::Dispatcher' => '0.15';
 requires 'Any::Moose';
 requires 'Sub::Exporter';
 
-build_requires 'Test::Exception';
-
 WriteAll;
 
