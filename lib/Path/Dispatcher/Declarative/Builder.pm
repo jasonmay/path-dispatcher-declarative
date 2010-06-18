@@ -119,7 +119,7 @@ sub under {
 
     do {
         local $UNDER_RULE = $under;
-        $rules->();
+        $rules->($UNDER_RULE);
     };
 }
 
