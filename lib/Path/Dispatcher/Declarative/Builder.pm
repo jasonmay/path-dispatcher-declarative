@@ -230,20 +230,8 @@ sub _add_rule {
     my $rule_name = "$file:$line";
 
     if (!defined(wantarray)) {
-        if ($UNDER_RULE) {
-            $UNDER_RULE->add_rule($rule);
-
-            my $full_name = $UNDER_RULE->has_name
-                          ? "(" . $UNDER_RULE->name . " - rule $rule_name)"
-                          : "(anonymous Under - rule $rule_name)";
-
-            $rule->name($full_name) unless $rule->has_name;
-        }
-        else {
-            $self->dispatcher->add_rule($rule);
-            $rule->name("(" . $self->dispatcher->name . " - rule $rule_name)")
-                unless $rule->has_name;
-        }
+        my $parent = $UNDER_RULE || $self->dispatcher;
+        $parent->add_rule($rule);
     }
     else {
         $rule->name($rule_name)
