@@ -108,8 +108,7 @@ sub under {
     my $self = shift;
     my ($matcher, $rules) = @_;
 
-    my $predicate = $self->_create_rule($matcher);
-    $predicate->prefix(1);
+    my $predicate = $self->_create_rule($matcher, prefix => 1);
 
     my $under = Path::Dispatcher::Rule::Under->new(
         predicate => $predicate,
