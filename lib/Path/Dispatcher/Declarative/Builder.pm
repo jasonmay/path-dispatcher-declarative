@@ -142,17 +142,17 @@ sub redispatch_to {
 sub rule_creators {
     return {
         ARRAY => sub {
-            my ($self, $tokens, $block) = @_;
+            my ($self, $tokens, %args) = @_;
 
             Path::Dispatcher::Rule::Tokens->new(
                 tokens => $tokens,
                 delimiter => $self->token_delimiter,
                 case_sensitive => $self->case_sensitive_tokens,
-                $block ? (block => $block) : (),
+                %args,
             ),
         },
         HASH => sub {
-            my ($self, $metadata_matchers, $block) = @_;
+            my ($self, $metadata_matchers, %args) = @_;
 
             if (keys %$metadata_matchers == 1) {
                 my ($field) = keys %$metadata_matchers;
@@ -162,37 +162,37 @@ sub rule_creators {
                 return Path::Dispatcher::Rule::Metadata->new(
                     field   => $field,
                     matcher => $matcher,
-                    $block ? (block => $block) : (),
+                    %args,
                 );
             }
 
             die "Doesn't support multiple metadata rules yet";
         },
         CODE => sub {
-            my ($self, $matcher, $block) = @_;
+            my ($self, $matcher, %args) = @_;
             Path::Dispatcher::Rule::CodeRef->new(
                 matcher => $matcher,
-                $block ? (block => $block) : (),
+                %args,
             ),
         },
         Regexp => sub {
-            my ($self, $regex, $block) = @_;
+            my ($self, $regex, %args) = @_;
             Path::Dispatcher::Rule::Regex->new(
                 regex => $regex,
-                $block ? (block => $block) : (),
+                %args,
             ),
         },
         empty => sub {
-            my ($self, $undef, $block) = @_;
+            my ($self, $undef, %args) = @_;
             Path::Dispatcher::Rule::Empty->new(
-                $block ? (block => $block) : (),
+                %args,
             ),
         },
     };
 }
 
 sub _create_rule {
-    my ($self, $matcher, $block) = @_;
+    my ($self, $matcher, %args) = @_;
 
     my $rule_creator;
 
@@ -209,7 +209,7 @@ sub _create_rule {
 
     $rule_creator or die "I don't know how to create a rule for type $matcher";
 
-    return $rule_creator->($self, $matcher, $block);
+    return $rule_creator->($self, $matcher, %args);
 }
 
 sub _add_rule {
@@ -221,7 +221,7 @@ sub _add_rule {
     }
     else {
         my ($matcher, $block) = splice @_, 0, 2;
-        $rule = $self->_create_rule($matcher, $block);
+        $rule = $self->_create_rule($matcher, block => $block);
     }
 
     # FIXME: broken since move from ::Declarative
