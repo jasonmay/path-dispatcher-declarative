@@ -220,6 +220,24 @@ sub _add_rule {
     }
     else {
         my ($matcher, $block) = splice @_, 0, 2;
+
+        # set $1, etc
+        my $old_block = $block;
+        $block = sub {
+            my $match = shift;
+
+            # clear $1, $2, $3 so they don't pollute the number vars for the block
+            "x" =~ /x/;
+
+            # populate $1, $2, etc for the duration of $code
+            # it'd be nice if we could use "local" but it seems to break tests
+            my $i = 0;
+            no strict 'refs';
+            *{ ++$i } = \$_ for @{ $match->positional_captures };
+
+            $old_block->(@_);
+        };
+
         $rule = $self->_create_rule($matcher, block => $block);
     }
 
