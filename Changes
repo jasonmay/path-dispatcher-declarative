@@ -1,5 +1,9 @@
 Revision history for Path-Dispatcher-Declarative
 
+0.02  2010-10-24
+        Reinstate the back-compat that Path-Dispatcher 1.00 broke by setting
+            $1, $2, etc. for you
+
 0.01  2010-03-16
         Factored out of Path-Dispatcher
 
