@@ -260,8 +260,6 @@ sub _add_rule {
         $parent->add_rule($rule);
     }
     else {
-        $rule->name($rule_name)
-            unless $rule->has_name;
         return $rule, @_;
     }
 }
