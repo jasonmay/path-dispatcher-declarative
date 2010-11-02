@@ -225,15 +225,23 @@ sub _add_rule {
         my $old_block = $block;
         $block = sub {
             my $match = shift;
+            my @pos = @{ $match->positional_captures };
 
-            # clear $1, $2, $3 so they don't pollute the number vars for the block
-            "x" =~ /x/;
+            # we don't have direct write access to $1 and friends, so we have to
+            # do this little hack. the only way we can update $1 is by matching
+            # against a regex (5.10 fixes that)..
+            my $re  = join '', map { defined($_) ? "(\Q$_\E)" : "(wontmatch)?" } @pos;
+            my $str = join '', map { defined($_) ? $_         : ""             } @pos;
 
-            # populate $1, $2, etc for the duration of $code
-            # it'd be nice if we could use "local" but it seems to break tests
-            my $i = 0;
-            no strict 'refs';
-            *{ ++$i } = \$_ for @{ $match->positional_captures };
+            # we need to check length because Perl's annoying gotcha of the empty regex
+            # actually being an alias for whatever the previously used regex was
+            # (useful last decade when qr// hadn't been invented)
+            # we need to do the match anyway, because we have to clear the number vars
+            ($str, $re) = ("x", "x") if length($str) == 0;
+
+            $str =~ qr{^$re$}
+                or die "Unable to match '$str' against a copy of itself ($re)!";
+
 
             $old_block->(@_);
         };
