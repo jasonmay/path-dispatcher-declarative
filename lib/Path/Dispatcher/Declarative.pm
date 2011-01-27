@@ -54,26 +54,33 @@ sub build_sugar {
         %$arg,
     );
 
-    return {
-        dispatcher    => sub { $builder->dispatcher },
-        rewrite       => sub { $builder->rewrite(@_) },
-        on            => sub { $builder->on(@_) },
-        under         => sub { $builder->under(@_) },
-        redispatch_to => sub { $builder->redispatch_to(@_) },
-        enum          => sub { $builder->enum(@_) },
-        next_rule     => sub { $builder->next_rule(@_) },
-        last_rule     => sub { $builder->last_rule(@_) },
-        complete      => sub { $builder->complete(@_) },
+    my %sugar;
 
-        then  => sub (&) { $builder->then(@_) },
-        chain => sub (&) { $builder->chain(@_) },
+    $sugar{dispatcher} = sub { $builder->dispatcher }; # export attribute
 
-        # NOTE on shift if $into: if caller is $into, then this function is
-        # being used as sugar otherwise, it's probably a method call, so
-        # discard the invocant
-        dispatch => sub { shift if caller ne $into; $builder->dispatch(@_) },
-        run      => sub { shift if caller ne $into; $builder->run(@_) },
-    };
+    foreach my $method ($builder->meta->get_all_methods) {
+        next unless $method->meta->can('does_role');
+        next unless $method->meta->does_role('Path::Dispatcher::Declarative::Exportable');
+
+        my $name = $method->name;
+
+        my $block;
+        my $main_block = sub {
+            shift if $method->invocable_from_caller and caller ne $into;
+            $builder->$name(@_);
+        };
+
+        if ($method->takes_coderef) {
+            $block = sub (&) { $main_block->(@_) };
+        }
+        else {
+            $block = sub { $main_block->(@_) };
+        }
+
+        $sugar{$name} = $block;
+    }
+
+    return \%sugar;
 }
 
 sub populate_defaults {
