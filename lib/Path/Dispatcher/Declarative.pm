@@ -66,6 +66,9 @@ sub build_sugar {
 
         my $block;
         my $main_block = sub {
+            # NOTE on shift if $into: if caller is $into, then this function is
+            # being used as sugar otherwise, it's probably a method call, so
+            # discard the invocant
             shift if $method->invocable_from_caller and caller ne $into;
             $builder->$name(@_);
         };
