@@ -52,120 +52,146 @@ sub add_optional_sugar_method {
     $class->_add_sugar_method(@_, invocable_from_caller => 1);
 }
 
-__PACKAGE__->add_sugar_method(next_rule => sub {
-    die "Path::Dispatcher next rule\n";
-});
+__PACKAGE__->add_sugar_method(
+    next_rule => sub {
+        die "Path::Dispatcher next rule\n";
+    }
+);
 
-__PACKAGE__->add_sugar_method(last_rule => sub {
-    die "Path::Dispatcher abort\n";
-});
+__PACKAGE__->add_sugar_method(
+    last_rule => sub {
+        die "Path::Dispatcher abort\n";
+    }
+);
 
-__PACKAGE__->add_optional_sugar_method(dispatch => sub {
-    my $self = shift;
+__PACKAGE__->add_optional_sugar_method(
+    dispatch => sub {
+        my $self = shift;
 
-    local $OUTERMOST_DISPATCHER = $self->dispatcher
-        if !$OUTERMOST_DISPATCHER;
-
-    $OUTERMOST_DISPATCHER->dispatch(@_);
-});
-
-__PACKAGE__->add_optional_sugar_method(run => sub {
-    my $self = shift;
-
-    local $OUTERMOST_DISPATCHER = $self->dispatcher
-        if !$OUTERMOST_DISPATCHER;
-
-    $OUTERMOST_DISPATCHER->run(@_);
-});
-
-__PACKAGE__->add_sugar_method(complete => sub {
-    my $self       = shift;
-    my $dispatcher = shift;
-
-    local $OUTERMOST_DISPATCHER = $self->dispatcher
-        if !$OUTERMOST_DISPATCHER;
-
-    $OUTERMOST_DISPATCHER->complete(@_);
-});
-
-__PACKAGE__->add_sugar_method(rewrite => sub {
-    my $self = shift;
-    my ($from, $to) = @_;
-    my $rewrite = sub {
         local $OUTERMOST_DISPATCHER = $self->dispatcher
             if !$OUTERMOST_DISPATCHER;
-        my $path = ref($to) eq 'CODE' ? $to->() : $to;
-        $OUTERMOST_DISPATCHER->run($path, @_);
-    };
-    $self->_add_rule($from, $rewrite);
-});
 
-__PACKAGE__->add_sugar_method(on => sub {
-    my $self = shift;
-    $self->_add_rule(@_);
-});
-
-__PACKAGE__->add_sugar_method(enum => sub {
-    my $self = shift;
-    Path::Dispatcher::Rule::Enum->new(
-        enum => [@_],
-    );
-});
-
-__PACKAGE__->_add_sugar_method(then => sub {
-    my $self = shift;
-    my $block = shift;
-    my $rule = Path::Dispatcher::Rule::Always->new(
-        block => sub {
-            $block->(@_);
-            __PACKAGE__->next_rule;
-        },
-    );
-    $self->_add_rule($rule);
-}, takes_coderef => 1);
-
-__PACKAGE__->_add_sugar_method(chain => sub {
-    my $self = shift;
-    my $block = shift;
-    my $rule = Path::Dispatcher::Rule::Chain->new(
-        block => $block,
-    );
-    $self->_add_rule($rule);
-}, takes_coderef => 1);
-
-__PACKAGE__->add_sugar_method(under => sub {
-    my $self = shift;
-    my ($matcher, $rules) = @_;
-
-    my $predicate = $self->_create_rule($matcher, prefix => 1);
-
-    my $under = Path::Dispatcher::Rule::Under->new(
-        predicate => $predicate,
-    );
-
-    $self->_add_rule($under, @_);
-
-    do {
-        local $UNDER_RULE = $under;
-        $rules->($UNDER_RULE);
-    };
-});
-
-__PACKAGE__->add_sugar_method(redispatch_to => sub {
-    my $self = shift;
-    my $dispatcher = shift;
-
-    # assume it's a declarative dispatcher
-    if (!ref($dispatcher)) {
-        $dispatcher = $dispatcher->dispatcher;
+        $OUTERMOST_DISPATCHER->dispatch(@_);
     }
 
-    my $redispatch = Path::Dispatcher::Rule::Dispatch->new(
-        dispatcher => $dispatcher,
-    );
+);
 
-    $self->_add_rule($redispatch);
-});
+__PACKAGE__->add_optional_sugar_method(
+    run => sub {
+        my $self = shift;
+
+        local $OUTERMOST_DISPATCHER = $self->dispatcher
+            if !$OUTERMOST_DISPATCHER;
+
+        $OUTERMOST_DISPATCHER->run(@_);
+    }
+);
+
+__PACKAGE__->add_sugar_method(
+    complete => sub {
+        my $self       = shift;
+        my $dispatcher = shift;
+
+        local $OUTERMOST_DISPATCHER = $self->dispatcher
+            if !$OUTERMOST_DISPATCHER;
+
+        $OUTERMOST_DISPATCHER->complete(@_);
+    }
+);
+
+__PACKAGE__->add_sugar_method(
+    rewrite => sub {
+        my $self = shift;
+        my ($from, $to) = @_;
+        my $rewrite = sub {
+            local $OUTERMOST_DISPATCHER = $self->dispatcher
+                if !$OUTERMOST_DISPATCHER;
+            my $path = ref($to) eq 'CODE' ? $to->() : $to;
+            $OUTERMOST_DISPATCHER->run($path, @_);
+        };
+        $self->_add_rule($from, $rewrite);
+    }
+);
+
+__PACKAGE__->add_sugar_method(
+    on => sub {
+        my $self = shift;
+        $self->_add_rule(@_);
+    }
+);
+
+__PACKAGE__->add_sugar_method(
+    enum => sub {
+        my $self = shift;
+        Path::Dispatcher::Rule::Enum->new(
+            enum => [@_],
+        );
+    }
+);
+
+__PACKAGE__->_add_sugar_method(
+    then => sub {
+        my $self = shift;
+        my $block = shift;
+        my $rule = Path::Dispatcher::Rule::Always->new(
+            block => sub {
+                $block->(@_);
+                __PACKAGE__->next_rule;
+            },
+        );
+        $self->_add_rule($rule);
+    }, takes_coderef => 1,
+);
+
+__PACKAGE__->_add_sugar_method(
+    chain => sub {
+        my $self = shift;
+        my $block = shift;
+        my $rule = Path::Dispatcher::Rule::Chain->new(
+            block => $block,
+        );
+        $self->_add_rule($rule);
+    }, takes_coderef => 1,
+);
+
+__PACKAGE__->add_sugar_method(
+    under => sub {
+        my $self = shift;
+        my ($matcher, $rules) = @_;
+
+        my $predicate = $self->_create_rule($matcher, prefix => 1);
+
+        my $under = Path::Dispatcher::Rule::Under->new(
+            predicate => $predicate,
+        );
+
+        $self->_add_rule($under, @_);
+
+        do {
+            local $UNDER_RULE = $under;
+            $rules->($UNDER_RULE);
+        };
+    }
+
+);
+
+__PACKAGE__->add_sugar_method(
+    redispatch_to => sub {
+        my $self = shift;
+        my $dispatcher = shift;
+
+        # assume it's a declarative dispatcher
+        if (!ref($dispatcher)) {
+            $dispatcher = $dispatcher->dispatcher;
+        }
+
+        my $redispatch = Path::Dispatcher::Rule::Dispatch->new(
+            dispatcher => $dispatcher,
+        );
+
+        $self->_add_rule($redispatch);
+    }
+);
 
 sub rule_creators {
     return {
@@ -292,7 +318,6 @@ sub _add_rule {
         return $rule, @_;
     }
 }
-
 
 __PACKAGE__->meta->make_immutable;
 no Any::Moose;
