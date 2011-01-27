@@ -23,33 +23,33 @@ has token_delimiter => (
     default     => ' ',
 );
 
-sub next_rule () {
+__PACKAGE__->add_sugar_method(next_rule => sub {
     die "Path::Dispatcher next rule\n";
-}
+});
 
-sub last_rule () {
+__PACKAGE__->add_sugar_method(last_rule => sub {
     die "Path::Dispatcher abort\n";
-}
+});
 
-sub dispatch {
+__PACKAGE__->add_optional_sugar_method(dispatch => sub {
     my $self = shift;
 
     local $OUTERMOST_DISPATCHER = $self->dispatcher
         if !$OUTERMOST_DISPATCHER;
 
     $OUTERMOST_DISPATCHER->dispatch(@_);
-}
+});
 
-sub run {
+__PACKAGE__->add_optional_sugar_method(run => sub {
     my $self = shift;
 
     local $OUTERMOST_DISPATCHER = $self->dispatcher
         if !$OUTERMOST_DISPATCHER;
 
     $OUTERMOST_DISPATCHER->run(@_);
-}
+});
 
-sub complete {
+__PACKAGE__->add_sugar_method(complete => sub {
     my $self       = shift;
     my $dispatcher = shift;
 
@@ -57,9 +57,9 @@ sub complete {
         if !$OUTERMOST_DISPATCHER;
 
     $OUTERMOST_DISPATCHER->complete(@_);
-}
+});
 
-sub rewrite {
+__PACKAGE__->add_sugar_method(rewrite => sub {
     my $self = shift;
     my ($from, $to) = @_;
     my $rewrite = sub {
@@ -69,42 +69,42 @@ sub rewrite {
         $OUTERMOST_DISPATCHER->run($path, @_);
     };
     $self->_add_rule($from, $rewrite);
-}
+});
 
-sub on {
+__PACKAGE__->add_sugar_method(on => sub {
     my $self = shift;
     $self->_add_rule(@_);
-}
+});
 
-sub enum {
+__PACKAGE__->add_sugar_method(enum => sub {
     my $self = shift;
     Path::Dispatcher::Rule::Enum->new(
         enum => [@_],
     );
-}
+});
 
-sub then {
+__PACKAGE__->_add_sugar_method(then => sub {
     my $self = shift;
     my $block = shift;
     my $rule = Path::Dispatcher::Rule::Always->new(
         block => sub {
             $block->(@_);
-            next_rule;
+            __PACKAGE__->next_rule;
         },
     );
     $self->_add_rule($rule);
-}
+}, takes_coderef => 1);
 
-sub chain {
+__PACKAGE__->_add_sugar_method(chain => sub {
     my $self = shift;
     my $block = shift;
     my $rule = Path::Dispatcher::Rule::Chain->new(
         block => $block,
     );
     $self->_add_rule($rule);
-}
+}, takes_coderef => 1);
 
-sub under {
+__PACKAGE__->add_sugar_method(under => sub {
     my $self = shift;
     my ($matcher, $rules) = @_;
 
@@ -120,9 +120,9 @@ sub under {
         local $UNDER_RULE = $under;
         $rules->($UNDER_RULE);
     };
-}
+});
 
-sub redispatch_to {
+__PACKAGE__->add_sugar_method(redispatch_to => sub {
     my $self = shift;
     my $dispatcher = shift;
 
@@ -136,7 +136,7 @@ sub redispatch_to {
     );
 
     $self->_add_rule($redispatch);
-}
+});
 
 sub rule_creators {
     return {
@@ -263,6 +263,36 @@ sub _add_rule {
         return $rule, @_;
     }
 }
+
+sub _add_sugar_method {
+    my $class = shift;
+    my ($name, $body, %method_args) = @_;
+
+    my $exportable_method_metaclass = $class->meta->create_anon_class(
+        superclasses => [$class->meta->method_metaclass],
+        roles        => ['Path::Dispatcher::Declarative::Exportable'],
+    );
+
+    my $method = $exportable_method_metaclass->name->wrap(
+        $body,
+        name                  => $name,
+        package_name          => $class,
+        %method_args,
+    );
+
+    $class->meta->add_method($name => $method);
+}
+
+sub add_sugar_method {
+    my $class = shift;
+    $class->_add_sugar_method(@_);
+}
+
+sub add_optional_sugar_method {
+    my $class = shift;
+    $class->_add_sugar_method(@_, invocable_from_caller => 1);
+}
+
 
 __PACKAGE__->meta->make_immutable;
 no Any::Moose;
