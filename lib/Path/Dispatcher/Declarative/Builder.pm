@@ -23,6 +23,35 @@ has token_delimiter => (
     default     => ' ',
 );
 
+sub _add_sugar_method {
+    my $class = shift;
+    my ($name, $body, %method_args) = @_;
+
+    my $exportable_method_metaclass = $class->meta->create_anon_class(
+        superclasses => [$class->meta->method_metaclass],
+        roles        => ['Path::Dispatcher::Declarative::Exportable'],
+    );
+
+    my $method = $exportable_method_metaclass->name->wrap(
+        $body,
+        name                  => $name,
+        package_name          => $class,
+        %method_args,
+    );
+
+    $class->meta->add_method($name => $method);
+}
+
+sub add_sugar_method {
+    my $class = shift;
+    $class->_add_sugar_method(@_);
+}
+
+sub add_optional_sugar_method {
+    my $class = shift;
+    $class->_add_sugar_method(@_, invocable_from_caller => 1);
+}
+
 __PACKAGE__->add_sugar_method(next_rule => sub {
     die "Path::Dispatcher next rule\n";
 });
@@ -262,35 +291,6 @@ sub _add_rule {
     else {
         return $rule, @_;
     }
-}
-
-sub _add_sugar_method {
-    my $class = shift;
-    my ($name, $body, %method_args) = @_;
-
-    my $exportable_method_metaclass = $class->meta->create_anon_class(
-        superclasses => [$class->meta->method_metaclass],
-        roles        => ['Path::Dispatcher::Declarative::Exportable'],
-    );
-
-    my $method = $exportable_method_metaclass->name->wrap(
-        $body,
-        name                  => $name,
-        package_name          => $class,
-        %method_args,
-    );
-
-    $class->meta->add_method($name => $method);
-}
-
-sub add_sugar_method {
-    my $class = shift;
-    $class->_add_sugar_method(@_);
-}
-
-sub add_optional_sugar_method {
-    my $class = shift;
-    $class->_add_sugar_method(@_, invocable_from_caller => 1);
 }
 
 
