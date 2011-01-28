@@ -23,7 +23,7 @@ has token_delimiter => (
     default     => ' ',
 );
 
-sub _add_sugar_method {
+sub add_sugar_method {
     my $class = shift;
     my ($name, $body, %method_args) = @_;
 
@@ -42,16 +42,6 @@ sub _add_sugar_method {
     $class->meta->add_method($name => $method);
 }
 
-sub add_sugar_method {
-    my $class = shift;
-    $class->_add_sugar_method(@_);
-}
-
-sub add_optional_sugar_method {
-    my $class = shift;
-    $class->_add_sugar_method(@_, invocable_from_caller => 1);
-}
-
 __PACKAGE__->add_sugar_method(
     next_rule => sub {
         die "Path::Dispatcher next rule\n";
@@ -64,7 +54,7 @@ __PACKAGE__->add_sugar_method(
     }
 );
 
-__PACKAGE__->add_optional_sugar_method(
+__PACKAGE__->add_sugar_method(
     dispatch => sub {
         my $self = shift;
 
@@ -72,11 +62,11 @@ __PACKAGE__->add_optional_sugar_method(
             if !$OUTERMOST_DISPATCHER;
 
         $OUTERMOST_DISPATCHER->dispatch(@_);
-    }
-
+    },
+    invocable_from_caller => 1,
 );
 
-__PACKAGE__->add_optional_sugar_method(
+__PACKAGE__->add_sugar_method(
     run => sub {
         my $self = shift;
 
@@ -84,7 +74,8 @@ __PACKAGE__->add_optional_sugar_method(
             if !$OUTERMOST_DISPATCHER;
 
         $OUTERMOST_DISPATCHER->run(@_);
-    }
+    },
+    invocable_from_caller => 1,
 );
 
 __PACKAGE__->add_sugar_method(
@@ -129,7 +120,7 @@ __PACKAGE__->add_sugar_method(
     }
 );
 
-__PACKAGE__->_add_sugar_method(
+__PACKAGE__->add_sugar_method(
     then => sub {
         my $self = shift;
         my $block = shift;
@@ -143,7 +134,7 @@ __PACKAGE__->_add_sugar_method(
     }, takes_coderef => 1,
 );
 
-__PACKAGE__->_add_sugar_method(
+__PACKAGE__->add_sugar_method(
     chain => sub {
         my $self = shift;
         my $block = shift;
